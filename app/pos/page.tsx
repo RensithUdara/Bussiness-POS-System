@@ -230,7 +230,7 @@ export default function POSPage() {
                     )}
                 </div>
 
-                <div className="p-4 border-t border-gray-200 bg-gray-50 space-y-4">
+                <div className="p-4 border-b border-gray-200 bg-gray-50 space-y-4">
                     <div className="space-y-2 text-sm">
                         <div className="flex justify-between text-gray-500">
                             <span>Subtotal</span>
@@ -246,49 +246,95 @@ export default function POSPage() {
                         </div>
                     </div>
 
-                    <button
-                        onClick={() => setIsCheckoutOpen(true)}
-                        disabled={cart.length === 0}
-                        className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <CreditCard className="mr-2 h-4 w-4" />
-                        Proceed to Payment
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setCart([])}
+                            disabled={cart.length === 0}
+                            className="flex-1 flex justify-center items-center py-2 px-4 border border-red-200 rounded-md text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <RotateCcw className="mr-2 h-4 w-4" />
+                            Reset
+                        </button>
+                        <button
+                            onClick={() => setIsCheckoutOpen(true)}
+                            disabled={cart.length === 0}
+                            className="flex-1 flex justify-center items-center py-2 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <CreditCard className="mr-2 h-4 w-4" />
+                            Pay
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <Modal
                 isOpen={isCheckoutOpen}
                 onClose={() => setIsCheckoutOpen(false)}
-                title="Payment"
+                title="Complete Payment"
             >
                 <div className="space-y-6">
-                    <div className="text-center py-4">
-                        <p className="text-gray-500">Total Amount Due</p>
-                        <p className="text-4xl font-bold text-gray-900">${(cartTotal * 1.1).toFixed(2)}</p>
+                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-6 text-center">
+                        <p className="text-gray-600 text-sm mb-2">Total Amount Due</p>
+                        <p className="text-5xl font-bold text-blue-600">${(cartTotal * 1.1).toFixed(2)}</p>
+                        <p className="text-gray-500 text-xs mt-2">Items: {cart.length} | Qty: {cart.reduce((sum, item) => sum + item.quantity, 0)}</p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <button
-                            onClick={() => setPaymentMethod('cash')}
-                            className={clsx("p-4 border rounded-lg text-center flex flex-col items-center transition-all", paymentMethod === 'cash' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'hover:bg-gray-50')}
-                        >
-                            <span className="font-bold">CASH</span>
-                        </button>
-                        <button
-                            onClick={() => setPaymentMethod('card')}
-                            className={clsx("p-4 border rounded-lg text-center flex flex-col items-center transition-all", paymentMethod === 'card' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'hover:bg-gray-50')}
-                        >
-                            <span className="font-bold">CARD</span>
-                        </button>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-3">Payment Method</label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                onClick={() => setPaymentMethod('cash')}
+                                className={clsx(
+                                    "p-4 border-2 rounded-lg text-center transition-all font-medium",
+                                    paymentMethod === 'cash' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300 bg-white hover:border-gray-400'
+                                )}
+                            >
+                                💵 Cash
+                            </button>
+                            <button
+                                onClick={() => setPaymentMethod('card')}
+                                className={clsx(
+                                    "p-4 border-2 rounded-lg text-center transition-all font-medium",
+                                    paymentMethod === 'card' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300 bg-white hover:border-gray-400'
+                                )}
+                            >
+                                💳 Card
+                            </button>
+                            <button
+                                onClick={() => setPaymentMethod('split')}
+                                className={clsx(
+                                    "p-4 border-2 rounded-lg text-center transition-all font-medium",
+                                    paymentMethod === 'split' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300 bg-white hover:border-gray-400'
+                                )}
+                            >
+                                🔀 Split
+                            </button>
+                            <button
+                                onClick={() => setPaymentMethod('credit')}
+                                className={clsx(
+                                    "p-4 border-2 rounded-lg text-center transition-all font-medium",
+                                    paymentMethod === 'credit' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300 bg-white hover:border-gray-400'
+                                )}
+                            >
+                                📋 Credit
+                            </button>
+                        </div>
                     </div>
 
-                    <button
-                        onClick={handleCheckout}
-                        className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-lg"
-                    >
-                        Confirm Payment
-                    </button>
+                    <div className="flex gap-3 pt-4 border-t">
+                        <button
+                            onClick={() => setIsCheckoutOpen(false)}
+                            className="flex-1 py-2 px-4 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleCheckout}
+                            className="flex-1 py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-md shadow-lg transition-colors"
+                        >
+                            ✓ Confirm Payment
+                        </button>
+                    </div>
                 </div>
             </Modal>
         </div>
