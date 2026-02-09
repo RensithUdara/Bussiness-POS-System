@@ -128,8 +128,8 @@ export default function InventoryPage() {
         item.batchNumber?.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
-    const getProductName = (id: number) => products?.find(p => p.id === id)?.name || 'Unknown';
-    const getVendorName = (id?: number) => id ? vendors?.find(v => v.id === id)?.name || 'Unknown' : 'Own Production';
+    const getProductName = (id: number) => products?.find((p: Product) => p.id === id)?.name || 'Unknown';
+    const getVendorName = (id?: number) => id ? vendors?.find((v: Vendor) => v.id === id)?.name || 'Unknown' : 'Own Production';
 
     return (
         <div className="space-y-6">
