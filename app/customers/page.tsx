@@ -206,7 +206,7 @@ export default function CustomersPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredCustomers?.map((customer) => (
+                {filteredCustomers?.map((customer: Customer) => (
                     <div
                         key={customer.id}
                         className="relative flex flex-col rounded-lg border border-gray-300 bg-white p-6 shadow-sm hover:shadow-md transition-all"
