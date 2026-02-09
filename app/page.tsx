@@ -129,7 +129,7 @@ export default function Home() {
           <h2 className="text-lg font-medium text-gray-900 mb-4">Top Selling Products</h2>
           {topProducts.length > 0 ? (
             <div className="space-y-3">
-              {topProducts.map((product, idx) => (
+              {topProducts.map((product: any, idx: number) => (
                 <div key={idx} className="flex items-center justify-between">
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900">{product.productName}</p>
@@ -152,7 +152,7 @@ export default function Home() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <h3 className="text-sm font-medium text-red-800 mb-3">Low Stock Alert</h3>
           <div className="space-y-2">
-            {lowStockItems.slice(0, 5).map(item => (
+            {lowStockItems.slice(0, 5).map((item: any) => (
               <div key={item.id} className="flex justify-between items-center text-sm">
                 <span className="text-red-700">{item.name}</span>
                 <span className="font-semibold text-red-900">{item.stockLevel} {item.unit}</span>
