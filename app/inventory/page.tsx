@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { Product, Vendor, InventoryItem } from '@/lib/types';
-import { Plus, Search, Calendar, Package } from 'lucide-react';
+import { Plus, Search, Calendar, Package, TrendingDown, DollarSign } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
+import { StatusCard } from '@/components/ui/StatusCard';
 import { useForm } from 'react-hook-form';
+import { calculateInventoryValue, calculateLowStockItems, calculateOutOfStockItems, formatCurrency } from '@/lib/utils';
 
 interface GRNFormData {
     productId: string; // Form returns string usually
@@ -109,10 +111,23 @@ function GRNForm({ onSuccess, onCancel }: { onSuccess: () => void, onCancel: () 
 }
 
 export default function InventoryPage() {
-    const inventory = useLiveQuery(() => db.inventory.reverse().toArray()); // Most recent first
+    const inventory = useLiveQuery(() => db.inventory.reverse().toArray());
     const products = useLiveQuery(() => db.products.toArray());
     const vendors = useLiveQuery(() => db.vendors.toArray());
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // Calculate metrics
+    const inventoryValue = useMemo(() => calculateInventoryValue(products || []), [products]);
+    const lowStockItems = useMemo(() => calculateLowStockItems(products || []), [products]);
+    const outOfStockItems = useMemo(() => calculateOutOfStockItems(products || []), [products]);
+    const totalStockQty = useMemo(() => (products || []).reduce((sum, p) => sum + p.stockLevel, 0), [products]);
+
+    const filteredInventory = inventory?.filter(item => {
+        const product = products?.find(p => p.id === item.productId);
+        return product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+               item.batchNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+    });
 
     const getProductName = (id: number) => products?.find(p => p.id === id)?.name || 'Unknown';
     const getVendorName = (id?: number) => id ? vendors?.find(v => v.id === id)?.name || 'Unknown' : 'Own Production';
@@ -130,7 +145,53 @@ export default function InventoryPage() {
                 </button>
             </div>
 
-            <div className="overflow-hidden bg-white shadow sm:rounded-lg">
+            {/* Key Metrics */}
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                <StatusCard
+                    title="Inventory Value"
+                    value={formatCurrency(inventoryValue)}
+                    subtitle="Total investment"
+                    icon={DollarSign}
+                    color="green"
+                />
+                <StatusCard
+                    title="Total Items"
+                    value={totalStockQty}
+                    subtitle="Units in stock"
+                    icon={Package}
+                    color="blue"
+                />
+                <StatusCard
+                    title="Low Stock Items"
+                    value={lowStockItems.length}
+                    subtitle="Below alert level"
+                    icon={TrendingDown}
+                    color="yellow"
+                />
+                <StatusCard
+                    title="Out of Stock"
+                    value={outOfStockItems.length}
+                    subtitle="Items to reorder"
+                    icon={Package}
+                    color="red"
+                />
+            </div>
+
+            {/* Search */}
+            <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                    type="text"
+                    placeholder="Search by product name or batch number..."
+                    className="block w-full rounded-md border-gray-300 pl-10 py-2 focus:border-blue-500 focus:ring-blue-500 sm:text-sm border shadow-sm"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+
+            <div className="overflow-hidden bg-white shadow sm:rounded-lg border border-gray-200">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
@@ -140,13 +201,14 @@ export default function InventoryPage() {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {inventory?.map((item) => (
-                            <tr key={item.id}>
+                        {filteredInventory?.map((item) => (
+                            <tr key={item.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {item.receivedDate.toLocaleDateString()}
+                                    {new Date(item.receivedDate).toLocaleDateString()}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                     {getProductName(item.productId)}
@@ -163,10 +225,18 @@ export default function InventoryPage() {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     ${item.costPrice.toFixed(2)}
                                 </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : '-'}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
+                {filteredInventory?.length === 0 && (
+                    <div className="p-8 text-center text-gray-500">
+                        No inventory records found.
+                    </div>
+                )}
             </div>
 
             <Modal
