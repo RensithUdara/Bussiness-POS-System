@@ -17,10 +17,10 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     const conn = await pool.getConnection();
-    
+
     // Check if settings exist
     const [existing] = await conn.query('SELECT id FROM settings LIMIT 1');
-    
+
     if ((existing as any[]).length > 0) {
       // Update existing
       await conn.query(
