@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/lib/db';
+import { useState, useEffect, useMemo } from 'react';
 import { Product, Vendor, InventoryItem } from '@/lib/types';
 import { Plus, Search, Calendar, Package, TrendingDown, DollarSign } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { StatusCard } from '@/components/ui/StatusCard';
 import { useForm } from 'react-hook-form';
+import { useSettings } from '@/lib/SettingsContext';
 import { calculateInventoryValue, calculateLowStockItems, calculateOutOfStockItems, formatCurrency } from '@/lib/utils';
 
 interface GRNFormData {
@@ -19,9 +18,7 @@ interface GRNFormData {
     expiryDate: string;
 }
 
-function GRNForm({ onSuccess, onCancel }: { onSuccess: () => void, onCancel: () => void }) {
-    const products = useLiveQuery(() => db.products.toArray());
-    const vendors = useLiveQuery(() => db.vendors.toArray());
+function GRNForm({ products, vendors, onSuccess, onCancel }: { products: Product[], vendors: Vendor[], onSuccess: () => void, onCancel: () => void }) {
     const { register, handleSubmit, formState: { errors } } = useForm<GRNFormData>();
 
     const onSubmit = async (data: GRNFormData) => {
@@ -31,24 +28,17 @@ function GRNForm({ onSuccess, onCancel }: { onSuccess: () => void, onCancel: () 
             const quantity = Number(data.quantity);
             const costPrice = Number(data.costPrice);
 
-            await db.inventory.add({
-                productId,
-                vendorId,
-                quantity,
-                costPrice,
-                batchNumber: data.batchNumber,
-                expiryDate: data.expiryDate ? new Date(data.expiryDate) : undefined,
-                receivedDate: new Date(),
+            await fetch('/api/inventory', {
+                method: 'POST',
+                body: JSON.stringify({
+                    productId,
+                    vendorId,
+                    quantity,
+                    batchNumber: data.batchNumber,
+                    expiryDate: data.expiryDate || null,
+                    receivedDate: new Date(),
+                })
             });
-
-            // Update product stock level
-            const product = await db.products.get(productId);
-            if (product) {
-                await db.products.update(productId, {
-                    stockLevel: (product.stockLevel || 0) + quantity,
-                    costPrice: costPrice, // Update latest cost price
-                });
-            }
 
             onSuccess();
         } catch (error) {
@@ -111,25 +101,46 @@ function GRNForm({ onSuccess, onCancel }: { onSuccess: () => void, onCancel: () 
 }
 
 export default function InventoryPage() {
-    const inventory = useLiveQuery(() => db.inventory.reverse().toArray());
-    const products = useLiveQuery(() => db.products.toArray());
-    const vendors = useLiveQuery(() => db.vendors.toArray());
+    const settings = useSettings();
+    const [inventory, setInventory] = useState<InventoryItem[]>([]);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [vendors, setVendors] = useState<Vendor[]>([]);
+    const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Calculate metrics
-    const inventoryValue = useMemo(() => calculateInventoryValue(products || []), [products]);
-    const lowStockItems = useMemo(() => calculateLowStockItems(products || []), [products]);
-    const outOfStockItems = useMemo(() => calculateOutOfStockItems(products || []), [products]);
-    const totalStockQty = useMemo(() => (products || []).reduce((sum: number, p: Product) => sum + p.stockLevel, 0), [products]);
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [inventoryRes, productsRes, vendorsRes] = await Promise.all([
+                    fetch('/api/inventory'),
+                    fetch('/api/products'),
+                    fetch('/api/vendors'),
+                ]);
+                setInventory(await inventoryRes.json());
+                setProducts(await productsRes.json());
+                setVendors(await vendorsRes.json());
+            } catch (error) {
+                console.error('Failed to fetch data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
 
-    const filteredInventory = inventory?.filter((item: InventoryItem) => {
-        const product = products?.find((p: Product) => p.id === item.productId);
-        item.batchNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+    // Calculate metrics
+    const inventoryValue = useMemo(() => calculateInventoryValue(products), [products]);
+    const lowStockItems = useMemo(() => calculateLowStockItems(products), [products]);
+    const outOfStockItems = useMemo(() => calculateOutOfStockItems(products), [products]);
+    const totalStockQty = useMemo(() => products.reduce((sum: number, p: Product) => sum + p.stockLevel, 0), [products]);
+
+    const filteredInventory = inventory.filter((item: InventoryItem) => {
+        return item.batchNumber?.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
-    const getProductName = (id: number) => products?.find((p: Product) => p.id === id)?.name || 'Unknown';
-    const getVendorName = (id?: number) => id ? vendors?.find((v: Vendor) => v.id === id)?.name || 'Unknown' : 'Own Production';
+    const getProductName = (id: number) => products.find((p: Product) => p.id === id)?.name || 'Unknown';
+    const getVendorName = (id?: number) => id ? vendors.find((v: Vendor) => v.id === id)?.name || 'Unknown' : 'Own Production';
 
     return (
         <div className="space-y-6">
@@ -148,7 +159,7 @@ export default function InventoryPage() {
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <StatusCard
                     title="Inventory Value"
-                    value={formatCurrency(inventoryValue)}
+                    value={formatCurrency(inventoryValue, settings.currencySymbol, settings.currencyPosition)}
                     subtitle="Total investment"
                     icon={DollarSign}
                     color="green"
@@ -243,7 +254,7 @@ export default function InventoryPage() {
                 onClose={() => setIsModalOpen(false)}
                 title="Goods Received Note (GRN)"
             >
-                <GRNForm onSuccess={() => setIsModalOpen(false)} onCancel={() => setIsModalOpen(false)} />
+                <GRNForm products={products} vendors={vendors} onSuccess={() => setIsModalOpen(false)} onCancel={() => setIsModalOpen(false)} />
             </Modal>
         </div>
     );
