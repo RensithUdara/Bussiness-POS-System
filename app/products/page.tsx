@@ -16,15 +16,15 @@ export default function ProductsPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-    const categories = useMemo(() => {
+    const categories = useMemo((): string[] => {
         if (!products) return [];
-        return ['all', ...Array.from(new Set(products.map(p => p.category)))];
+        return ['all', ...Array.from(new Set(products.map((p: Product) => p.category)) as Set<string>)];
     }, [products]);
 
     const lowStockItems = useMemo(() => calculateLowStockItems(products || []), [products]);
     const inventoryValue = useMemo(() => calculateInventoryValue(products || []), [products]);
 
-    const filteredProducts = products?.filter(p => {
+const filteredProducts = products?.filter((p: Product) => {
         const matchesSearch =
             p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -103,7 +103,7 @@ export default function ProductsPage() {
                     onChange={(e) => setSelectedCategory(e.target.value)}
                     className="rounded-md border-gray-300 px-4 py-2 text-sm border shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 >
-                    {categories.map(cat => (
+                    {categories.map((cat: string) => (
                         <option key={cat} value={cat}>
                             {cat === 'all' ? 'All Categories' : cat}
                         </option>
@@ -124,7 +124,7 @@ export default function ProductsPage() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white">
-                        {filteredProducts?.map((product) => (
+                        {filteredProducts?.map((product: Product) => (
                             <tr key={product.id} className="hover:bg-gray-50">
                                 <td className="whitespace-nowrap px-6 py-4">
                                     <div className="text-sm font-medium text-gray-900">{product.name}</div>
