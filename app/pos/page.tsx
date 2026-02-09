@@ -18,9 +18,9 @@ export default function POSPage() {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [search, setSearch] = useState('');
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'split'>('cash');
+    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'split' | 'credit'>('cash');
 
-    const filteredProducts = products?.filter(p =>
+    const filteredProducts = products?.filter((p: Product) =>
         p.name.toLowerCase().includes(search.toLowerCase()) ||
         p.sku.toLowerCase().includes(search.toLowerCase()) ||
         (p.barcode && p.barcode.includes(search))
@@ -147,7 +147,7 @@ export default function POSPage() {
 
                 <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {filteredProducts?.map(product => (
+                        {filteredProducts?.map((product: Product) => (
                             <button
                                 key={product.id}
                                 onClick={() => addToCart(product)}
@@ -193,7 +193,7 @@ export default function POSPage() {
                             <p>Cart is empty</p>
                         </div>
                     ) : (
-                        cart.map(item => (
+                        cart.map((item: CartItem) => (
                             <div key={item.productId} className="flex justify-between items-start p-3 bg-gray-50 rounded-lg group">
                                 <div className="flex-1">
                                     <h4 className="font-medium text-gray-900">{item.productName}</h4>
