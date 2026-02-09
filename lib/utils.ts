@@ -181,8 +181,13 @@ export const calculateTotalDiscounts = (sales: Sale[]): number => {
 };
 
 // ============= FORMATTED OUTPUT =============
-export const formatCurrency = (amount: number): string => {
-    return `$${amount.toFixed(2)}`;
+export const formatCurrency = (amount: number, symbol: string = '$', position: 'before' | 'after' = 'before'): string => {
+    const formatted = amount.toFixed(2);
+    if (position === 'before') {
+        return `${symbol}${formatted}`;
+    } else {
+        return `${formatted} ${symbol}`;
+    }
 };
 
 export const formatPercentage = (value: number, decimals: number = 1): string => {
