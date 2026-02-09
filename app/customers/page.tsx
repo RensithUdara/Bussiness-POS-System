@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/lib/db';
+import { useState, useEffect, useMemo } from 'react';
 import { Customer } from '@/lib/types';
 import { Plus, Search, User, Phone, Mail, Edit, Trash } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { StatusCard } from '@/components/ui/StatusCard';
 import { useForm } from 'react-hook-form';
+import { useSettings } from '@/lib/SettingsContext';
 import { calculateTotalCustomerSpent, calculateTotalOutstandingBalance, getWholesaleCustomers, getRetailCustomers, formatCurrency } from '@/lib/utils';
 
 interface CustomerFormProps {
@@ -22,9 +21,15 @@ function CustomerForm({ defaultValues, onSuccess, onCancel }: CustomerFormProps)
     const onSubmit = async (data: Customer) => {
         try {
             if (defaultValues?.id) {
-                await db.customers.update(defaultValues.id, data);
+                await fetch(`/api/customers/${defaultValues.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(data)
+                });
             } else {
-                await db.customers.add({ ...data, totalSpent: 0, outstandingBalance: 0 });
+                await fetch('/api/customers', {
+                    method: 'POST',
+                    body: JSON.stringify({ ...data, totalSpent: 0, outstandingBalance: 0 })
+                });
             }
             onSuccess();
         } catch (error) {
@@ -93,13 +98,29 @@ function CustomerForm({ defaultValues, onSuccess, onCancel }: CustomerFormProps)
 }
 
 export default function CustomersPage() {
-    const customers = useLiveQuery(() => db.customers.toArray());
+    const settings = useSettings();
+    const [customers, setCustomers] = useState<Customer[]>([]);
+    const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<Customer | undefined>(undefined);
     const [search, setSearch] = useState('');
     const [customerType, setCustomerType] = useState<'all' | 'retail' | 'wholesale'>('all');
 
-    const filteredCustomers = customers?.filter((customer: Customer) => {
+    useEffect(() => {
+        const fetchCustomers = async () => {
+            try {
+                const res = await fetch('/api/customers');
+                setCustomers(await res.json());
+            } catch (error) {
+                console.error('Failed to fetch customers:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchCustomers();
+    }, []);
+
+    const filteredCustomers = customers.filter((customer: Customer) => {
         const matchesSearch = customer.name.toLowerCase().includes(search.toLowerCase()) ||
             customer.phone.includes(search);
         const matchesType = customerType === 'all' || customer.type === customerType;
@@ -107,10 +128,10 @@ export default function CustomersPage() {
     });
 
     // Calculate metrics
-    const totalSpent = useMemo(() => calculateTotalCustomerSpent(customers || []), [customers]);
-    const totalOutstanding = useMemo(() => calculateTotalOutstandingBalance(customers || []), [customers]);
-    const wholesaleCount = useMemo(() => getWholesaleCustomers(customers || []).length, [customers]);
-    const retailCount = useMemo(() => getRetailCustomers(customers || []).length, [customers]);
+    const totalSpent = useMemo(() => calculateTotalCustomerSpent(customers), [customers]);
+    const totalOutstanding = useMemo(() => calculateTotalOutstandingBalance(customers), [customers]);
+    const wholesaleCount = useMemo(() => getWholesaleCustomers(customers).length, [customers]);
+    const retailCount = useMemo(() => getRetailCustomers(customers).length, [customers]);
 
     const handleEdit = (customer: Customer) => {
         setEditingCustomer(customer);
@@ -119,7 +140,12 @@ export default function CustomersPage() {
 
     const handleDelete = async (id: number) => {
         if (confirm('Are you sure you want to delete this customer?')) {
-            await db.customers.delete(id);
+            try {
+                await fetch(`/api/customers/${id}`, { method: 'DELETE' });
+                setCustomers(customers.filter(c => c.id !== id));
+            } catch (error) {
+                console.error('Failed to delete customer:', error);
+            }
         }
     };
 
@@ -152,14 +178,14 @@ export default function CustomersPage() {
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <StatusCard
                     title="Total Spent"
-                    value={formatCurrency(totalSpent)}
+                    value={formatCurrency(totalSpent, settings.currencySymbol, settings.currencyPosition)}
                     subtitle="Combined revenue"
                     icon={Phone}
                     color="green"
                 />
                 <StatusCard
                     title="Outstanding Balance"
-                    value={formatCurrency(totalOutstanding)}
+                    value={formatCurrency(totalOutstanding, settings.currencySymbol, settings.currencyPosition)}
                     subtitle="Amount due"
                     icon={Mail}
                     color="red"
@@ -250,18 +276,18 @@ export default function CustomersPage() {
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                                 <span className="text-gray-600">Total Spent:</span>
-                                <span className="font-semibold text-green-600">{formatCurrency(customer.totalSpent)}</span>
+                                <span className="font-semibold text-green-600">{formatCurrency(customer.totalSpent, settings.currencySymbol, settings.currencyPosition)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-600">Balance:</span>
                                 <span className={`font-semibold ${customer.outstandingBalance > 0 ? 'text-red-600' : 'text-gray-600'}`}>
-                                    {formatCurrency(customer.outstandingBalance)}
+                                    {formatCurrency(customer.outstandingBalance, settings.currencySymbol, settings.currencyPosition)}
                                 </span>
                             </div>
                             {customer.type === 'wholesale' && customer.creditLimit && (
                                 <div className="flex justify-between">
                                     <span className="text-gray-600">Credit Limit:</span>
-                                    <span className="font-semibold text-blue-600">{formatCurrency(customer.creditLimit)}</span>
+                                    <span className="font-semibold text-blue-600">{formatCurrency(customer.creditLimit, settings.currencySymbol, settings.currencyPosition)}</span>
                                 </div>
                             )}
                         </div>
