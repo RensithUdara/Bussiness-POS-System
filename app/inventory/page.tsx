@@ -124,8 +124,7 @@ export default function InventoryPage() {
     const totalStockQty = useMemo(() => (products || []).reduce((sum: number, p: Product) => sum + p.stockLevel, 0), [products]);
 
     const filteredInventory = inventory?.filter((item: InventoryItem) => {
-        const product = products?.find(p => p.id === item.productId);
-        return product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        const product = products?.find((p: Product) => p.id === item.productId);
             item.batchNumber?.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
