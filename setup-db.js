@@ -111,3 +111,8 @@ async function setupDatabase() {
         process.exit(0);
     } catch (error) {
         console.error('❌ Database setup failed:', error.message);
+        process.exit(1);
+    }
+}
+
+setupDatabase();
