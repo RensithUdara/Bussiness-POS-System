@@ -1,30 +1,44 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/lib/db';
+import { useState, useEffect, useMemo } from 'react';
 import { Product } from '@/lib/types';
 import { Plus, Search, Edit, Trash, AlertCircle } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { ProductForm } from '@/components/ProductForm';
+import { useSettings } from '@/lib/SettingsContext';
 import { calculateLowStockItems, calculateInventoryValue, formatCurrency } from '@/lib/utils';
 
 export default function ProductsPage() {
-    const products = useLiveQuery(() => db.products.toArray());
+    const settings = useSettings();
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const res = await fetch('/api/products');
+                setProducts(await res.json());
+            } catch (error) {
+                console.error('Failed to fetch products:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchProducts();
+    }, []);
+
     const categories = useMemo((): string[] => {
-        if (!products) return [];
         return ['all', ...Array.from(new Set(products.map((p: Product) => p.category)) as Set<string>)];
     }, [products]);
 
-    const lowStockItems = useMemo(() => calculateLowStockItems(products || []), [products]);
-    const inventoryValue = useMemo(() => calculateInventoryValue(products || []), [products]);
+    const lowStockItems = useMemo(() => calculateLowStockItems(products), [products]);
+    const inventoryValue = useMemo(() => calculateInventoryValue(products), [products]);
 
-    const filteredProducts = products?.filter((p: Product) => {
+    const filteredProducts = products.filter((p: Product) => {
         const matchesSearch =
             p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -40,7 +54,12 @@ export default function ProductsPage() {
 
     const handleDelete = async (id: number) => {
         if (confirm('Are you sure you want to delete this product?')) {
-            await db.products.delete(id);
+            try {
+                await fetch(`/api/products/${id}`, { method: 'DELETE' });
+                setProducts(products.filter(p => p.id !== id));
+            } catch (error) {
+                console.error('Failed to delete product:', error);
+            }
         }
     };
 
@@ -55,9 +74,9 @@ export default function ProductsPage() {
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Products</h1>
                     <div className="mt-2 flex gap-4 text-sm">
-                        <span className="text-gray-600">Total: <span className="font-semibold">{products?.length || 0}</span></span>
+                        <span className="text-gray-600">Total: <span className="font-semibold">{products.length}</span></span>
                         <span className="text-red-600">Low Stock: <span className="font-semibold">{lowStockItems.length}</span></span>
-                        <span className="text-green-600">Inventory Value: <span className="font-semibold">{formatCurrency(inventoryValue)}</span></span>
+                        <span className="text-green-600">Inventory Value: <span className="font-semibold">{formatCurrency(inventoryValue, settings.currencySymbol, settings.currencyPosition)}</span></span>
                     </div>
                 </div>
                 <button
