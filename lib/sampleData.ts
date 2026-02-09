@@ -209,7 +209,7 @@ export const sampleCustomers: Omit<Customer, 'id'>[] = [
     {
         name: 'James Thompson',
         phone: '555-2102',
-        email: null,
+        email: undefined,
         type: 'retail',
         totalSpent: 128.50,
         outstandingBalance: 0,
