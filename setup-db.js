@@ -39,6 +39,7 @@ async function setupDatabase() {
             console.log(`Trying connection: ${config.name}...`);
             connection = await mysql.createConnection({
                 host: config.host,
+                port: 3306,
                 user: config.user,
                 password: config.password,
             });
