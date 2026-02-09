@@ -121,7 +121,7 @@ export default function InventoryPage() {
     const inventoryValue = useMemo(() => calculateInventoryValue(products || []), [products]);
     const lowStockItems = useMemo(() => calculateLowStockItems(products || []), [products]);
     const outOfStockItems = useMemo(() => calculateOutOfStockItems(products || []), [products]);
-    const totalStockQty = useMemo(() => (products || []).reduce((sum, p) => sum + p.stockLevel, 0), [products]);
+    const totalStockQty = useMemo(() => (products || []).reduce((sum: number, p: Product) => sum + p.stockLevel, 0), [products]);
 
     const filteredInventory = inventory?.filter(item => {
         const product = products?.find(p => p.id === item.productId);
