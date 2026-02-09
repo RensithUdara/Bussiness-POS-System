@@ -11,7 +11,7 @@ export class POSDatabase extends Dexie {
 
     constructor() {
         super('POSDatabase');
-        this.version(1).stores({
+        (this as any).version(1).stores({
             products: '++id, sku, barcode, category, name, stockLevel',
             inventory: '++id, productId, vendorId, batchNumber, expiryDate',
             sales: '++id, date, customerId, type, status, totalAmount',
@@ -25,7 +25,7 @@ export class POSDatabase extends Dexie {
 export const db = new POSDatabase();
 
 // Initialize default settings if needed
-db.on('populate', () => {
+(db as any).on('populate', () => {
     db.settings.add({
         storeName: 'My Wholesale & Retail Store',
         address: '123 Market Street',
