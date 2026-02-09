@@ -24,7 +24,7 @@ export const calculateAverageSaleValue = (sales: Sale[]): number => {
 
 export const calculateTotalCostOfSoldGoods = (sales: Sale[], products: Product[]): number => {
     const productMap = new Map(products.map(p => [p.id, p]));
-    
+
     return sales.reduce((total, sale) => {
         return total + sale.items.reduce((saleTotal, item) => {
             const product = productMap.get(item.productId);
@@ -89,18 +89,18 @@ export const getRetailCustomers = (customers: Customer[]): Customer[] => {
 export const getSalesCountByType = (sales: Sale[]): { retail: number; wholesale: number } => {
     let retail = 0;
     let wholesale = 0;
-    
+
     sales.forEach(sale => {
         if (sale.type === 'retail') retail++;
         else wholesale++;
     });
-    
+
     return { retail, wholesale };
 };
 
 export const getMostSoldProducts = (sales: Sale[], products: Product[], limit: number = 10) => {
     const productCounts = new Map<number, number>();
-    
+
     sales.forEach(sale => {
         sale.items.forEach(item => {
             productCounts.set(
@@ -109,11 +109,11 @@ export const getMostSoldProducts = (sales: Sale[], products: Product[], limit: n
             );
         });
     });
-    
+
     const sorted = Array.from(productCounts.entries())
         .sort((a, b) => b[1] - a[1])
         .slice(0, limit);
-    
+
     return sorted.map(([productId, qty]) => {
         const product = products.find(p => p.id === productId);
         return {
@@ -134,19 +134,19 @@ export const getSalesByDateRange = (sales: Sale[], startDate: Date, endDate: Dat
 
 export const getDailySalesStats = (sales: Sale[]) => {
     const grouped = new Map<string, { total: number; count: number; retail: number; wholesale: number }>();
-    
+
     sales.forEach(sale => {
         const dateKey = new Date(sale.date).toLocaleDateString();
         const current = grouped.get(dateKey) || { total: 0, count: 0, retail: 0, wholesale: 0 };
-        
+
         current.total += sale.totalAmount;
         current.count++;
         if (sale.type === 'retail') current.retail += sale.totalAmount;
         else current.wholesale += sale.totalAmount;
-        
+
         grouped.set(dateKey, current);
     });
-    
+
     return Array.from(grouped.entries()).map(([date, stats]) => ({
         date,
         ...stats,
@@ -162,11 +162,11 @@ export const calculatePaymentMethodBreakdown = (sales: Sale[]) => {
         split: 0,
         credit: 0,
     };
-    
+
     sales.forEach(sale => {
         breakdown[sale.paymentMethod as keyof typeof breakdown] += sale.totalAmount;
     });
-    
+
     return breakdown;
 };
 
