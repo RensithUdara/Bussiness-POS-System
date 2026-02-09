@@ -74,26 +74,66 @@ async function setupDatabase() {
         console.log('✓ Database selected');
 
         // Split the schema into individual statements and execute them
-        const statements = schemaSQL
-            .split(';')
-            .map(stmt => stmt.trim())
-            .filter(stmt => stmt.length > 0 && !stmt.startsWith('--'));
+        const rawStatements = schemaSQL.split(';');
+        console.log(`Raw split produced ${rawStatements.length} parts\n`);
 
-        let created = 0;
-        for (const statement of statements) {
-            try {
-                await connection.execute(statement);
-                created++;
-            } catch (err) {
-                // Ignore "Table already exists" errors
-                if (err.code !== 'ER_TABLE_EXISTS_ERROR') {
-                    console.error('Error executing:', statement.substring(0, 50));
-                    console.error(err.message);
-                }
+        const statements = [];
+        const filtered = [];
+
+        for (const stmt of rawStatements) {
+            const trimmed = stmt.trim();
+            if (trimmed.length === 0) {
+                continue; // Skip empty statements
+            }
+
+            // Remove leading comment lines but keep the CREATE statement
+            const lines = trimmed.split('\n');
+            const withoutComments = lines.filter(line => !line.trim().startsWith('--')).join('\n').trim();
+
+            if (withoutComments.length > 0) {
+                statements.push(withoutComments);
             }
         }
 
-        console.log(`✓ Created ${created} database objects`);
+        console.log(`After filtering: ${statements.length} statements\n`);
+
+        // Debug: Show first 100 chars of each statement
+        statements.forEach((stmt, idx) => {
+            const preview = stmt.substring(0, 80).replace(/\n/g, ' ');
+            const type = stmt.includes('CREATE INDEX') ? '📇' : stmt.includes('CREATE TABLE') ? '📋' : '❓';
+            console.log(`  ${type} ${idx + 1}. ${preview}...`);
+        });
+        console.log('');
+
+        let created = 0;
+        for (let i = 0; i < statements.length; i++) {
+            const statement = statements[i];
+            const isCreateTable = statement.toLowerCase().includes('create table');
+            const isCreateIndex = statement.toLowerCase().includes('create index');
+
+            try {
+                if (isCreateIndex) {
+                    console.log(`  ⏭  Skipping: ${statement.substring(0, 50)}...`);
+                    continue;
+                }
+
+                console.log(`  ⚙  Executing: ${statement.substring(0, 50)}...`);
+                await connection.execute(statement);
+                created++;
+
+                if (isCreateTable) {
+                    const tableName = statement.match(/create table[\s`]*if[\s]*not[\s]*exists[\s`]*(\w+)/i)?.[1] || 'unknown';
+                    console.log(`  ✓ Created table: ${tableName}`);
+                } else {
+                    console.log(`  ✓ Executed statement ${created}`);
+                }
+            } catch (err) {
+                console.error(`  ✗ Error on statement ${i + 1}:`);
+                console.error(`    ${err.code}: ${err.message}`);
+            }
+        }
+
+        console.log(`\n✓ Successfully created ${created} database objects`);
 
         // Update .env.local if using a different password
         if (successConfig.password && successConfig.password !== (process.env.DB_PASSWORD || '')) {
