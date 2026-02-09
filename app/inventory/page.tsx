@@ -123,7 +123,7 @@ export default function InventoryPage() {
     const outOfStockItems = useMemo(() => calculateOutOfStockItems(products || []), [products]);
     const totalStockQty = useMemo(() => (products || []).reduce((sum: number, p: Product) => sum + p.stockLevel, 0), [products]);
 
-    const filteredInventory = inventory?.filter(item => {
+    const filteredInventory = inventory?.filter((item: InventoryItem) => {
         const product = products?.find(p => p.id === item.productId);
         return product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             item.batchNumber?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -205,7 +205,7 @@ export default function InventoryPage() {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredInventory?.map((item) => (
+                        {filteredInventory?.map((item: InventoryItem) => (
                             <tr key={item.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {new Date(item.receivedDate).toLocaleDateString()}
