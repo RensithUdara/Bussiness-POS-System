@@ -31,7 +31,7 @@ export default function Home() {
           fetch('/api/sales'),
           fetch('/api/customers'),
         ]);
-        
+
         setProducts(await productsRes.json());
         setSales(await salesRes.json());
         setCustomers(await customersRes.json());
