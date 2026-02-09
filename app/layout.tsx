@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Sidebar } from '@/components/Sidebar';
+import { SettingsProvider } from '@/lib/SettingsContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -18,16 +19,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <div className="flex h-screen overflow-hidden bg-gray-100">
-          <aside className="w-64 flex-shrink-0 bg-gray-900">
-            <Sidebar />
-          </aside>
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
-              {children}
-            </main>
+        <SettingsProvider>
+          <div className="flex h-screen overflow-hidden bg-gray-100">
+            <aside className="w-64 flex-shrink-0 bg-gray-900">
+              <Sidebar />
+            </aside>
+            <div className="flex flex-1 flex-col overflow-hidden">
+              <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+                {children}
+              </main>
+            </div>
           </div>
-        </div>
+        </SettingsProvider>
       </body>
     </html>
   );
