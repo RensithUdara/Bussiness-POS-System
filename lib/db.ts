@@ -1,17 +1,17 @@
-import Dexie from 'dexie';
+import { Dexie, type Table } from 'dexie';
 import { Product, Sale, InventoryItem, Vendor, Customer, Settings } from './types';
 
 export class POSDatabase extends Dexie {
-    products!: any;
-    inventory!: any;
-    sales!: any;
-    customers!: any;
-    vendors!: any;
-    settings!: any;
+    products!: Table<Product, number>;
+    inventory!: Table<InventoryItem, number>;
+    sales!: Table<Sale, number>;
+    customers!: Table<Customer, number>;
+    vendors!: Table<Vendor, number>;
+    settings!: Table<Settings, number>;
 
     constructor() {
         super('POSDatabase');
-        (this as any).version(1).stores({
+        this.version(1).stores({
             products: '++id, sku, barcode, category, name, stockLevel',
             inventory: '++id, productId, vendorId, batchNumber, expiryDate',
             sales: '++id, date, customerId, type, status, totalAmount',
@@ -25,7 +25,7 @@ export class POSDatabase extends Dexie {
 export const db = new POSDatabase();
 
 // Initialize default settings if needed
-(db as any).on('populate', () => {
+db.on('populate', () => {
     db.settings.add({
         storeName: 'My Wholesale & Retail Store',
         address: '123 Market Street',
