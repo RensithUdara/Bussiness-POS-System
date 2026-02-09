@@ -1,7 +1,7 @@
 'use client';
 
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/lib/db';
+import { useEffect, useMemo, useState } from 'react';
+import { useSettings } from '@/lib/SettingsContext';
 import {
     ResponsiveContainer,
     BarChart,
@@ -17,7 +17,6 @@ import {
     Pie,
     Cell
 } from 'recharts';
-import { useMemo } from 'react';
 import { StatusCard } from '@/components/ui/StatusCard';
 import {
     calculateTotalRevenue,
@@ -39,15 +38,35 @@ import { DollarSign, BarChart3, TrendingUp, ShoppingCart, CreditCard } from 'luc
 const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
 
 export default function ReportsPage() {
-    const sales = useLiveQuery(() => db.sales.toArray());
-    const products = useLiveQuery(() => db.products.toArray());
+    const settings = useSettings();
+    const [sales, setSales] = useState<any[]>([]);
+    const [products, setProducts] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [salesRes, productsRes] = await Promise.all([
+                    fetch('/api/sales'),
+                    fetch('/api/products'),
+                ]);
+                setSales(await salesRes.json());
+                setProducts(await productsRes.json());
+            } catch (error) {
+                console.error('Failed to fetch data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
 
     // Calculate metrics
-    const totalRevenue = useMemo(() => calculateTotalRevenue(sales || []), [sales]);
-    const retailRevenue = useMemo(() => calculateRetailRevenue(sales || []), [sales]);
-    const wholesaleRevenue = useMemo(() => calculateWholesaleRevenue(sales || []), [sales]);
-    const grossProfit = useMemo(() => calculateGrossProfit(sales || [], products || []), [sales, products]);
-    const profitMargin = useMemo(() => calculateGrossProfitMargin(sales || [], products || []), [sales, products]);
+    const totalRevenue = useMemo(() => calculateTotalRevenue(sales), [sales]);
+    const retailRevenue = useMemo(() => calculateRetailRevenue(sales), [sales]);
+    const wholesaleRevenue = useMemo(() => calculateWholesaleRevenue(sales), [sales]);
+    const grossProfit = useMemo(() => calculateGrossProfit(sales, products), [sales, products]);
+    const profitMargin = useMemo(() => calculateGrossProfitMargin(sales, products), [sales, products]);
     const avgSaleValue = useMemo(() => calculateAverageSaleValue(sales || []), [sales]);
     const paymentMethods = useMemo(() => calculatePaymentMethodBreakdown(sales || []), [sales]);
     const totalDiscounts = useMemo(() => calculateTotalDiscounts(sales || []), [sales]);
@@ -69,13 +88,13 @@ export default function ReportsPage() {
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
                 <StatusCard
                     title="Total Revenue"
-                    value={formatCurrency(totalRevenue)}
+                    value={formatCurrency(totalRevenue, settings.currencySymbol, settings.currencyPosition)}
                     icon={DollarSign}
                     color="green"
                 />
                 <StatusCard
                     title="Gross Profit"
-                    value={formatCurrency(grossProfit)}
+                    value={formatCurrency(grossProfit, settings.currencySymbol, settings.currencyPosition)}
                     icon={TrendingUp}
                     color="purple"
                 />
@@ -87,13 +106,13 @@ export default function ReportsPage() {
                 />
                 <StatusCard
                     title="Avg Sale Value"
-                    value={formatCurrency(avgSaleValue)}
+                    value={formatCurrency(avgSaleValue, settings.currencySymbol, settings.currencyPosition)}
                     icon={ShoppingCart}
                     color="yellow"
                 />
                 <StatusCard
                     title="Total Discounts"
-                    value={formatCurrency(totalDiscounts)}
+                    value={formatCurrency(totalDiscounts, settings.currencySymbol, settings.currencyPosition)}
                     icon={CreditCard}
                     color="red"
                 />
@@ -107,7 +126,7 @@ export default function ReportsPage() {
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-sm font-medium text-gray-600">Retail Sales</span>
-                                <span className="text-lg font-semibold text-green-600">{formatCurrency(retailRevenue)}</span>
+                                <span className="text-lg font-semibold text-green-600">{formatCurrency(retailRevenue, settings.currencySymbol, settings.currencyPosition)}</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div
@@ -119,7 +138,7 @@ export default function ReportsPage() {
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-sm font-medium text-gray-600">Wholesale Sales</span>
-                                <span className="text-lg font-semibold text-purple-600">{formatCurrency(wholesaleRevenue)}</span>
+                                <span className="text-lg font-semibold text-purple-600">{formatCurrency(wholesaleRevenue, settings.currencySymbol, settings.currencyPosition)}</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div
@@ -161,7 +180,7 @@ export default function ReportsPage() {
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="date" />
                                 <YAxis />
-                                <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                                <Tooltip formatter={(value) => formatCurrency(value as number, settings.currencySymbol, settings.currencyPosition)} />
                                 <Legend />
                                 <Bar dataKey="retail" stackId="a" fill="#22c55e" name="Retail Sales" />
                                 <Bar dataKey="wholesale" stackId="a" fill="#a855f7" name="Wholesale Sales" />
@@ -194,7 +213,7 @@ export default function ReportsPage() {
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                                <Tooltip formatter={(value) => formatCurrency(value as number, settings.currencySymbol, settings.currencyPosition)} />
                             </PieChart>
                         </ResponsiveContainer>
                     ) : (
@@ -223,7 +242,7 @@ export default function ReportsPage() {
                                     <tr key={idx} className="hover:bg-gray-50">
                                         <td className="px-4 py-3 text-gray-900 font-medium">{product.productName}</td>
                                         <td className="px-4 py-3 text-right text-gray-600">{product.totalQuantitySold}</td>
-                                        <td className="px-4 py-3 text-right font-semibold text-green-600">{formatCurrency(product.revenue)}</td>
+                                        <td className="px-4 py-3 text-right font-semibold text-green-600">{formatCurrency(product.revenue, settings.currencySymbol, settings.currencyPosition)}</td>
                                     </tr>
                                 ))}
                             </tbody>
