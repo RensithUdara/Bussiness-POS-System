@@ -64,7 +64,7 @@ export default function VendorsPage() {
     const [editingVendor, setEditingVendor] = useState<Vendor | undefined>(undefined);
     const [search, setSearch] = useState('');
 
-    const filteredVendors = vendors?.filter(v =>
+    const filteredVendors = vendors?.filter((v: Vendor) =>
         v.name.toLowerCase().includes(search.toLowerCase()) ||
         v.contactPerson?.toLowerCase().includes(search.toLowerCase())
     );
