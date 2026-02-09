@@ -25,7 +25,7 @@ export default function ProductsPage() {
     const inventoryValue = useMemo(() => calculateInventoryValue(products || []), [products]);
 
     const filteredProducts = products?.filter(p => {
-        const matchesSearch = 
+        const matchesSearch =
             p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (p.barcode && p.barcode.includes(searchTerm));
@@ -137,13 +137,12 @@ export default function ProductsPage() {
                                     <div className="text-blue-600 text-xs">${product.wholesalePrice.toFixed(2)} (Min {product.minWholesaleQty})</div>
                                 </td>
                                 <td className="whitespace-nowrap px-6 py-4 text-sm">
-                                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                                        product.stockLevel <= (product.alertLevel || 5) 
-                                            ? 'bg-red-100 text-red-800' 
+                                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${product.stockLevel <= (product.alertLevel || 5)
+                                            ? 'bg-red-100 text-red-800'
                                             : product.stockLevel <= (product.alertLevel || 5) * 2
-                                            ? 'bg-yellow-100 text-yellow-800'
-                                            : 'bg-green-100 text-green-800'
-                                    }`}>
+                                                ? 'bg-yellow-100 text-yellow-800'
+                                                : 'bg-green-100 text-green-800'
+                                        }`}>
                                         {product.stockLevel} {product.unit}
                                     </span>
                                 </td>
