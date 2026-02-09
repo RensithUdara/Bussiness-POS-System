@@ -101,7 +101,7 @@ export default function CustomersPage() {
 
     const filteredCustomers = customers?.filter((customer) => {
         const matchesSearch = customer.name.toLowerCase().includes(search.toLowerCase()) ||
-                             customer.phone.includes(search);
+            customer.phone.includes(search);
         const matchesType = customerType === 'all' || customer.type === customerType;
         return matchesSearch && matchesType;
     });
@@ -213,9 +213,8 @@ export default function CustomersPage() {
                     >
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
-                                <span className={`inline-flex h-10 w-10 items-center justify-center rounded-full font-semibold text-white ${
-                                    customer.type === 'wholesale' ? 'bg-purple-500' : 'bg-blue-500'
-                                }`}>
+                                <span className={`inline-flex h-10 w-10 items-center justify-center rounded-full font-semibold text-white ${customer.type === 'wholesale' ? 'bg-purple-500' : 'bg-blue-500'
+                                    }`}>
                                     {customer.name.charAt(0).toUpperCase()}
                                 </span>
                                 <div>
