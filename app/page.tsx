@@ -1,10 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/lib/db';
 import { StatusCard } from '@/components/ui/StatusCard';
-import { seedDatabase } from '@/lib/seedDatabase';
+import { useSettings } from '@/lib/SettingsContext';
 import {
   calculateTotalRevenue,
   calculateGrossProfitMargin,
@@ -19,16 +17,33 @@ import { ShoppingCart, Package, AlertTriangle, Users, TrendingUp, DollarSign } f
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 export default function Home() {
-  const [isMounted, setIsMounted] = useState(false);
+  const settings = useSettings();
+  const [products, setProducts] = useState<any[]>([]);
+  const [sales, setSales] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setIsMounted(true);
-    seedDatabase();
-  }, []);
+    const fetchData = async () => {
+      try {
+        const [productsRes, salesRes, customersRes] = await Promise.all([
+          fetch('/api/products'),
+          fetch('/api/sales'),
+          fetch('/api/customers'),
+        ]);
+        
+        setProducts(await productsRes.json());
+        setSales(await salesRes.json());
+        setCustomers(await customersRes.json());
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const products = useLiveQuery(() => db.products.toArray()) ?? [];
-  const sales = useLiveQuery(() => db.sales.toArray()) ?? [];
-  const customers = useLiveQuery(() => db.customers.toArray()) ?? [];
+    fetchData();
+  }, []);
 
   const productsCount = products.length;
   const lowStockItems = useMemo(() => calculateLowStockItems(products), [products]);
@@ -40,7 +55,7 @@ export default function Home() {
   const topProducts = useMemo(() => getMostSoldProducts(sales, products, 5), [sales, products]);
   const dailyStats = useMemo(() => getDailySalesStats(sales), [sales]);
 
-  if (!isMounted) return null;
+  if (loading) return <div className="p-8 text-center">Loading...</div>;
 
   return (
     <div className="space-y-6">
@@ -64,7 +79,7 @@ export default function Home() {
         />
         <StatusCard
           title="Total Revenue"
-          value={formatCurrency(totalRevenue)}
+          value={formatCurrency(totalRevenue, settings.currencySymbol, settings.currencyPosition)}
           subtitle={`from ${salesCount} sales`}
           icon={DollarSign}
           color="green"
@@ -72,7 +87,7 @@ export default function Home() {
         <StatusCard
           title="Gross Profit Margin"
           value={formatPercentage(profitMargin)}
-          subtitle={`Inventory value: ${formatCurrency(inventoryValue)}`}
+          subtitle={`Inventory value: ${formatCurrency(inventoryValue, settings.currencySymbol, settings.currencyPosition)}`}
           icon={TrendingUp}
           color="purple"
         />
@@ -89,7 +104,7 @@ export default function Home() {
         />
         <StatusCard
           title="Inventory Value"
-          value={formatCurrency(inventoryValue)}
+          value={formatCurrency(inventoryValue, settings.currencySymbol, settings.currencyPosition)}
           subtitle={`Total stock investment`}
           icon={Package}
           color="indigo"
@@ -114,7 +129,7 @@ export default function Home() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" fontSize={12} />
                 <YAxis fontSize={12} />
-                <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                <Tooltip formatter={(value) => formatCurrency(value as number, settings.currencySymbol, settings.currencyPosition)} />
                 <Legend />
                 <Line type="monotone" dataKey="total" stroke="#22c55e" name="Total Revenue" strokeWidth={2} />
               </LineChart>
@@ -136,7 +151,7 @@ export default function Home() {
                     <p className="text-xs text-gray-500">{product.totalQuantitySold} units sold</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-green-600">{formatCurrency(product.revenue)}</p>
+                    <p className="text-sm font-semibold text-green-600">{formatCurrency(product.revenue, settings.currencySymbol, settings.currencyPosition)}</p>
                   </div>
                 </div>
               ))}
