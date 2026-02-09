@@ -2,12 +2,12 @@ import Dexie from 'dexie';
 import { Product, Sale, InventoryItem, Vendor, Customer, Settings } from './types';
 
 export class POSDatabase extends Dexie {
-    products!: Dexie.Table<Product, number>;
-    inventory!: Dexie.Table<InventoryItem, number>;
-    sales!: Dexie.Table<Sale, number>;
-    customers!: Dexie.Table<Customer, number>;
-    vendors!: Dexie.Table<Vendor, number>;
-    settings!: Dexie.Table<Settings, number>;
+    products!: any;
+    inventory!: any;
+    sales!: any;
+    customers!: any;
+    vendors!: any;
+    settings!: any;
 
     constructor() {
         super('POSDatabase');
