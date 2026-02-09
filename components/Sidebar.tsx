@@ -13,6 +13,7 @@ const navItems = [
     { name: 'Vendors', href: '/vendors', icon: Users },
     { name: 'Customers', href: '/customers', icon: User },
     { name: 'Reports', href: '/reports', icon: BarChart },
+    { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 export function Sidebar() {
