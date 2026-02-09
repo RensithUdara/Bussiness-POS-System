@@ -1,8 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/lib/db';
+import { useState, useEffect } from 'react';
 import { Vendor } from '@/lib/types';
 import { Plus, Search, Trash, Edit, Phone, Mail, MapPin } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
@@ -14,9 +12,15 @@ function VendorForm({ defaultValues, onSuccess, onCancel }: { defaultValues?: Ve
     const onSubmit = async (data: Vendor) => {
         try {
             if (defaultValues?.id) {
-                await db.vendors.update(defaultValues.id, data);
+                await fetch(`/api/vendors/${defaultValues.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(data)
+                });
             } else {
-                await db.vendors.add(data);
+                await fetch('/api/vendors', {
+                    method: 'POST',
+                    body: JSON.stringify(data)
+                });
             }
             onSuccess();
         } catch (e) {
@@ -59,12 +63,27 @@ function VendorForm({ defaultValues, onSuccess, onCancel }: { defaultValues?: Ve
 }
 
 export default function VendorsPage() {
-    const vendors = useLiveQuery(() => db.vendors.toArray());
+    const [vendors, setVendors] = useState<Vendor[]>([]);
+    const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingVendor, setEditingVendor] = useState<Vendor | undefined>(undefined);
     const [search, setSearch] = useState('');
 
-    const filteredVendors = vendors?.filter((v: Vendor) =>
+    useEffect(() => {
+        const fetchVendors = async () => {
+            try {
+                const res = await fetch('/api/vendors');
+                setVendors(await res.json());
+            } catch (error) {
+                console.error('Failed to fetch vendors:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchVendors();
+    }, []);
+
+    const filteredVendors = vendors.filter((v: Vendor) =>
         v.name.toLowerCase().includes(search.toLowerCase()) ||
         v.contactPerson?.toLowerCase().includes(search.toLowerCase())
     );
@@ -76,7 +95,12 @@ export default function VendorsPage() {
 
     const handleDelete = async (id: number) => {
         if (confirm('Delete this vendor?')) {
-            await db.vendors.delete(id);
+            try {
+                await fetch(`/api/vendors/${id}`, { method: 'DELETE' });
+                setVendors(vendors.filter(v => v.id !== id));
+            } catch (error) {
+                console.error('Failed to delete vendor:', error);
+            }
         }
     };
 
