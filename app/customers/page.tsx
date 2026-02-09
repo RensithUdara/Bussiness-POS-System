@@ -99,9 +99,7 @@ export default function CustomersPage() {
     const [search, setSearch] = useState('');
     const [customerType, setCustomerType] = useState<'all' | 'retail' | 'wholesale'>('all');
 
-    const filteredCustomers = customers?.filter((customer) => {
-        const matchesSearch = customer.name.toLowerCase().includes(search.toLowerCase()) ||
-            customer.phone.includes(search);
+    const filteredCustomers = customers?.filter((customer: Customer) => {
         const matchesType = customerType === 'all' || customer.type === customerType;
         return matchesSearch && matchesType;
     });
