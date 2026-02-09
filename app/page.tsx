@@ -5,8 +5,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
 import { StatusCard } from '@/components/ui/StatusCard';
 import { seedDatabase } from '@/lib/seedDatabase';
-import { 
-  calculateTotalRevenue, 
+import {
+  calculateTotalRevenue,
   calculateGrossProfitMargin,
   calculateLowStockItems,
   calculateInventoryValue,
@@ -29,7 +29,7 @@ export default function Home() {
   const products = useLiveQuery(() => db.products.toArray()) ?? [];
   const sales = useLiveQuery(() => db.sales.toArray()) ?? [];
   const customers = useLiveQuery(() => db.customers.toArray()) ?? [];
-  
+
   const productsCount = products.length;
   const lowStockItems = useMemo(() => calculateLowStockItems(products), [products]);
   const salesCount = sales.length;
@@ -45,7 +45,7 @@ export default function Home() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold tracking-tight text-gray-900">Dashboard</h1>
-      
+
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatusCard
