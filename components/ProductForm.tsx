@@ -2,7 +2,6 @@
 
 import { useForm } from 'react-hook-form';
 import { Product } from '@/lib/types';
-import { db } from '@/lib/db';
 import { clsx } from 'clsx';
 
 interface ProductFormProps {
@@ -41,9 +40,15 @@ export function ProductForm({ defaultValues, onSuccess, onCancel }: ProductFormP
             };
 
             if (defaultValues?.id) {
-                await db.products.update(defaultValues.id, formattedData);
+                await fetch(`/api/products/${defaultValues.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(formattedData)
+                });
             } else {
-                await db.products.add(formattedData);
+                await fetch('/api/products', {
+                    method: 'POST',
+                    body: JSON.stringify(formattedData)
+                });
             }
             onSuccess();
         } catch (error) {
