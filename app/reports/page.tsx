@@ -2,37 +2,37 @@
 
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db';
-import { 
-  ResponsiveContainer, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  CartesianGrid, 
-  Legend,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell
+import {
+    ResponsiveContainer,
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    Tooltip,
+    CartesianGrid,
+    Legend,
+    LineChart,
+    Line,
+    PieChart,
+    Pie,
+    Cell
 } from 'recharts';
 import { useMemo } from 'react';
 import { StatusCard } from '@/components/ui/StatusCard';
 import {
-  calculateTotalRevenue,
-  calculateRetailRevenue,
-  calculateWholesaleRevenue,
-  calculateGrossProfit,
-  calculateGrossProfitMargin,
-  calculatePaymentMethodBreakdown,
-  getMostSoldProducts,
-  getSalesCountByType,
-  calculateAverageSaleValue,
-  getDailySalesStats,
-  formatCurrency,
-  formatPercentage,
-  calculateTotalDiscounts
+    calculateTotalRevenue,
+    calculateRetailRevenue,
+    calculateWholesaleRevenue,
+    calculateGrossProfit,
+    calculateGrossProfitMargin,
+    calculatePaymentMethodBreakdown,
+    getMostSoldProducts,
+    getSalesCountByType,
+    calculateAverageSaleValue,
+    getDailySalesStats,
+    formatCurrency,
+    formatPercentage,
+    calculateTotalDiscounts
 } from '@/lib/utils';
 import { DollarSign, BarChart3, TrendingUp, ShoppingCart, CreditCard } from 'lucide-react';
 
@@ -110,8 +110,8 @@ export default function ReportsPage() {
                                 <span className="text-lg font-semibold text-green-600">{formatCurrency(retailRevenue)}</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div 
-                                    className="bg-green-500 h-2 rounded-full" 
+                                <div
+                                    className="bg-green-500 h-2 rounded-full"
                                     style={{ width: `${totalRevenue > 0 ? (retailRevenue / totalRevenue) * 100 : 0}%` }}
                                 ></div>
                             </div>
@@ -122,8 +122,8 @@ export default function ReportsPage() {
                                 <span className="text-lg font-semibold text-purple-600">{formatCurrency(wholesaleRevenue)}</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div 
-                                    className="bg-purple-500 h-2 rounded-full" 
+                                <div
+                                    className="bg-purple-500 h-2 rounded-full"
                                     style={{ width: `${totalRevenue > 0 ? (wholesaleRevenue / totalRevenue) * 100 : 0}%` }}
                                 ></div>
                             </div>
