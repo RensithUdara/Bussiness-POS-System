@@ -1,8 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/lib/db';
+import { useState, useEffect, useMemo } from 'react';
 import { Product, Sale, SaleItem } from '@/lib/types';
 import { Search, ShoppingCart, Trash2, Plus, Minus, CreditCard, RotateCcw } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -13,14 +11,29 @@ interface CartItem extends SaleItem {
 }
 
 export default function POSPage() {
-    const products = useLiveQuery(() => db.products.toArray());
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
     const [mode, setMode] = useState<'retail' | 'wholesale'>('retail');
     const [cart, setCart] = useState<CartItem[]>([]);
     const [search, setSearch] = useState('');
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'split' | 'credit'>('cash');
 
-    const filteredProducts = products?.filter((p: Product) =>
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const res = await fetch('/api/products');
+                setProducts(await res.json());
+            } catch (error) {
+                console.error('Failed to fetch products:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchProducts();
+    }, []);
+
+    const filteredProducts = products.filter((p: Product) =>
         p.name.toLowerCase().includes(search.toLowerCase()) ||
         p.sku.toLowerCase().includes(search.toLowerCase()) ||
         (p.barcode && p.barcode.includes(search))
@@ -76,31 +89,41 @@ export default function POSPage() {
 
     const handleCheckout = async () => {
         try {
-            const sale: Sale = {
+            const sale = {
                 date: new Date(),
+                customerId: null,
                 type: mode,
-                items: cart.map(({ product, ...rest }) => rest), // Remove product ref
+                status: 'completed',
                 totalAmount: cartTotal,
-                discount: 0,
-                paymentMethod: paymentMethod as any, // Simple casting
-                status: 'completed'
+                discountAmount: 0,
+                taxAmount: 0,
+                paymentMethod: paymentMethod
             };
 
-            const saleId = await db.sales.add(sale);
+            const res = await fetch('/api/sales', {
+                method: 'POST',
+                body: JSON.stringify(sale)
+            });
 
-            // Update Inventory
+            const saleData = await res.json();
+
+            // Update Product Stock
             for (const item of cart) {
                 const product = item.product;
                 if (product.id) {
-                    await db.products.update(product.id, {
-                        stockLevel: product.stockLevel - item.quantity
+                    await fetch(`/api/products/${product.id}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({
+                            ...product,
+                            stockLevel: product.stockLevel - item.quantity
+                        })
                     });
                 }
             }
 
             setCart([]);
             setIsCheckoutOpen(false);
-            alert(`Sale completed! ID: ${saleId}`);
+            alert(`Sale completed! ID: ${saleData.id}`);
         } catch (error) {
             console.error('Checkout failed', error);
             alert('Checkout failed');
