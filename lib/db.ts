@@ -1,4 +1,5 @@
-import Dexie, { type Table } from 'dexie';
+import Dexie from 'dexie';
+import type { Table } from 'dexie';
 import { Product, Sale, InventoryItem, Vendor, Customer, Settings } from './types';
 
 export class POSDatabase extends Dexie {
