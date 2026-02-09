@@ -125,8 +125,8 @@ export default function InventoryPage() {
 
     const filteredInventory = inventory?.filter(item => {
         const product = products?.find(p => p.id === item.productId);
-        return product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-               item.batchNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+        return product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.batchNumber?.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
     const getProductName = (id: number) => products?.find(p => p.id === id)?.name || 'Unknown';
