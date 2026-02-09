@@ -74,7 +74,7 @@ function GRNForm({ onSuccess, onCancel }: { onSuccess: () => void, onCancel: () 
                 <label className="block text-sm font-medium text-gray-700">Source (Vendor)</label>
                 <select {...register('vendorId')} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border">
                     <option value="">Own Production / Internal</option>
-                    {vendors?.map(v => (
+                    {vendors?.map((v: Vendor) => (
                         <option key={v.id} value={v.id}>{v.name}</option>
                     ))}
                 </select>
