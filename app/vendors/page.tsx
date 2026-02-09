@@ -113,7 +113,7 @@ export default function VendorsPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredVendors?.map(vendor => (
+                {filteredVendors?.map((vendor: Vendor) => (
                     <div key={vendor.id} className="relative flex flex-col bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                         <div className="flex-1">
                             <h3 className="text-lg font-medium text-gray-900">{vendor.name}</h3>
